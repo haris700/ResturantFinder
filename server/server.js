@@ -23,7 +23,7 @@ app.get("/api/v1/resturants", async (req, res) => {
     res.status(200).json({
       status: "sucess",
       result: resturantRatingData.rows.length,
-      data: { resturants:resturantRatingData.rows },
+      data: { resturants: resturantRatingData.rows },
     });
   } catch (error) {
     console.error(error);
@@ -96,11 +96,11 @@ app.put("/api/v1/resturants/:id", async (req, res) => {
 //delete
 
 app.delete("/api/v1/resturants/:id", async (req, res) => {
-  const id = req.params.id;
   try {
-    const result = await db.query(" DELETE FROM resturants WHERE id=$1", [
+    const result = await db.query("DELETE FROM resturants WHERE id=$1", [
       req.params.id,
     ]);
+    console.log(result);
     if (!result.length) {
       res.json({
         message: "no resturanyt found",
@@ -110,7 +110,7 @@ app.delete("/api/v1/resturants/:id", async (req, res) => {
       message: "deleted sucess fully",
     });
   } catch (error) {
-    console.error(error.messag);
+    console.error(error);
   }
 });
 
@@ -139,9 +139,14 @@ app.post("/api/v1/resturants/:id", async (req, res) => {
       "INSERT INTO reviews(resturant_id,name,reviews,rating) VALUES($1,$2,$3,$4) RETURNING * ",
       [req.params.id, req.body.name, req.body.review, req.body.rating]
     );
+    const result = await db.query(
+      "select * from  resturants left join(select resturant_id,COUNT(*),TRUNC(AVG(rating),1) as average_rating from reviews group by resturant_id) reviews on resturants.id=reviews.resturant_id where id=$1",
+      [req.params.id]
+    );
     console.log(response);
     res.status(201).json({
       data: {
+        resturant: result.rows,
         review: response.rows,
       },
     });
